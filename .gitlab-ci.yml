@@ -1,0 +1,69 @@
+# GitLab CI for jwt-generator-typescript.
+#
+# Mirrors the Makefile / npm scripts (test / typecheck / lint / build) on the
+# pinned dev Node version. The multi-version compatibility matrix is
+# intentionally not run here.
+
+stages:
+  - prepare
+  - quality
+
+default:
+  image: node:22-alpine
+
+variables:
+  npm_config_cache: '$CI_PROJECT_DIR/.npm'
+
+# Run on merge requests, the default branch, and tags — while avoiding a
+# duplicate pipeline when a branch already has an open merge request.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# Install dependencies once from the committed lockfile, then hand node_modules/
+# to the quality jobs.
+install:
+  stage: prepare
+  script:
+    - npm ci
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+
+test:
+  stage: quality
+  needs: ['install']
+  script:
+    - npm test
+
+typecheck:
+  stage: quality
+  needs: ['install']
+  script:
+    - npm run typecheck
+
+lint:
+  stage: quality
+  needs: ['install']
+  script:
+    - npm run lint
+
+build:
+  stage: quality
+  needs: ['install']
+  # git lets us assert the committed dist/ is in sync with src/ — the whole
+  # distribution model (install-from-GitHub, no build step) depends on it.
+  before_script:
+    - apk add --no-cache git
+  script:
+    - npm run build
+    - git diff --exit-code dist

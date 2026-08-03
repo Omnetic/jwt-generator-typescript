@@ -1,0 +1,16 @@
+services:
+  node:
+    build:
+      context: .
+    working_dir: /app
+    # Optional argument fallbacks for the examples; unset host vars stay unset.
+    environment:
+      - OMNETIC_SA_KEY_PATH
+      - OMNETIC_SA_KID
+      - OMNETIC_DMS_API_URL
+    volumes:
+      - .:/app
+      - node-modules:/app/node_modules
+
+volumes:
+  node-modules:
