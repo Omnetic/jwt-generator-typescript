@@ -1,0 +1,7 @@
+node_modules/
+*.log
+.DS_Store
+
+# Service Account private keys — the examples need the key inside the repo
+# (that is what gets mounted into the container); never commit one.
+*.pem
